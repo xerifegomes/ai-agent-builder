@@ -1,0 +1,4 @@
+The sky is blue because of Rayleigh scattering.
+Water boils at 100 degrees Celsius at sea level.
+The capital of France is Paris.
+AI agents are autonomous systems that can perceive their environment and take actions to achieve goals.

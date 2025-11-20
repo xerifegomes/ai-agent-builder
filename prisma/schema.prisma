@@ -1,0 +1,191 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String?
+  image         String?
+  password      String?        // Hash bcrypt para autenticação por credenciais
+  role          String         @default("USER") // USER, ADMIN, SUPERADMIN
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  agents        Agent[]
+  conversations Conversation[]
+  accounts      Account[]
+  sessions      Session[]
+  
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Agent {
+  id            String         @id @default(cuid())
+  userId        String
+  name          String
+  description   String?
+  model         String         @default("qwen2.5-coder:14b")
+  systemPrompt  String?
+  temperature   Float          @default(0.7)
+  topP          Float          @default(0.9)
+  topK          Int            @default(40)
+  maxTokens     Int            @default(2048)
+  isPublic      Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversations Conversation[]
+  memories      Memory[]
+  testCases     TestCase[]
+  documents     Document[]
+  
+  @@index([userId])
+  @@map("agents")
+}
+
+model Conversation {
+  id        String    @id @default(cuid())
+  userId    String
+  agentId   String
+  title     String    @default("Nova Conversa")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agent     Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  messages  Message[]
+  
+  @@index([userId])
+  @@index([agentId])
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  role           String       // "user" | "assistant" | "system"
+  content        String
+  timestamp      DateTime     @default(now())
+  
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  @@index([conversationId])
+  @@map("messages")
+}
+
+model Memory {
+  id        String   @id @default(cuid())
+  agentId   String
+  content   String
+  metadata  Json?
+  createdAt DateTime @default(now())
+  
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  
+  @@index([agentId])
+  @@map("memories")
+}
+
+model Document {
+  id          String   @id @default(cuid())
+  agentId     String
+  content     String
+  metadata    Json?
+  embeddingJson String  // Keeping as JSON for now to avoid pgvector complexity in this step
+  collectionName String @default("default")
+  createdAt   DateTime @default(now())
+  
+  agent       Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  
+  @@index([agentId])
+  @@index([collectionName])
+  @@map("documents")
+}
+
+model TestCase {
+  id          String       @id @default(cuid())
+  agentId     String
+  input       String
+  expectedOutput String?
+  keywords    String[]     @default([]) // Native array support in Postgres
+  description String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  agent       Agent        @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  executions  TestExecution[]
+  
+  @@index([agentId])
+  @@map("test_cases")
+}
+
+model TestExecution {
+  id          String   @id @default(cuid())
+  testCaseId  String
+  output      String
+  passed      Boolean
+  duration    Int      // milliseconds
+  executedAt  DateTime @default(now())
+  
+  testCase    TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  
+  @@index([testCaseId])
+  @@map("test_executions")
+}
+
+model Analytics {
+  id              String   @id @default(cuid())
+  agentId         String
+  metric          String   // "conversation", "message", "error", "response_time"
+  value           Float
+  metadata        Json?
+  timestamp       DateTime @default(now())
+  
+  @@index([agentId])
+  @@index([metric])
+  @@index([timestamp])
+  @@map("analytics")
+}
