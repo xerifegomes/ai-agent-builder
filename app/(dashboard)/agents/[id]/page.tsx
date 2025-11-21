@@ -22,6 +22,7 @@ import {
   Clock
 } from "lucide-react"
 import { ChatMessage } from "@/components/chat-message"
+import { TrainingTab } from "./training-tab"
 
 interface Message {
   role: 'user' | 'assistant' | 'system'
@@ -47,7 +48,7 @@ export default function AgentDetailPage() {
   const [agent, setAgent] = useState<any>(null)
   const [loadingAgent, setLoadingAgent] = useState(true)
 
-  const [mode, setMode] = useState<'chat' | 'config' | 'test'>('chat')
+  const [mode, setMode] = useState<'chat' | 'config' | 'test' | 'training'>('chat')
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -295,6 +296,13 @@ export default function AgentDetailPage() {
           >
             <Play className="h-4 w-4 mr-2" />
             Testes
+          </Button>
+          <Button
+            variant={mode === 'training' ? 'default' : 'outline'}
+            onClick={() => setMode('training')}
+          >
+            <Bot className="h-4 w-4 mr-2" />
+            Treinamento
           </Button>
           <Button
             variant={mode === 'config' ? 'default' : 'outline'}
@@ -588,6 +596,11 @@ export default function AgentDetailPage() {
             </Button>
           </CardContent>
         </Card>
+      )}
+
+      {/* Training Tab */}
+      {mode === 'training' && (
+        <TrainingTab agentId={agentId} />
       )}
     </div>
   )

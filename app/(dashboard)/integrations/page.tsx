@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { MessageCircle, Slack, Globe, Code, Plug } from "lucide-react"
+import Link from "next/link"
 
 export default function IntegrationsPage() {
   const integrations = [
@@ -77,7 +78,13 @@ export default function IntegrationsPage() {
               <CardDescription className="min-h-[60px]">{integration.description}</CardDescription>
             </CardContent>
             <CardFooter>
-              {integration.connected ? (
+              {integration.id === 'whatsapp' ? (
+                <Link href="/integrations/whatsapp" className="w-full">
+                  <Button className="w-full" variant={integration.connected ? "outline" : "default"}>
+                    {integration.connected ? "Gerenciar" : "Conectar"}
+                  </Button>
+                </Link>
+              ) : integration.connected ? (
                 <Button variant="outline" className="w-full border-green-200 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800">
                   Conectado
                 </Button>
